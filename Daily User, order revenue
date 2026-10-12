@@ -1,0 +1,22 @@
+-- every month starting we need to change Date ---
+select
+to_char(created_at::date, 'yyyy-mm-dd') as order_date,
+count(distinct increment_id) as orders,
+round(sum(grand_total)/ count(distinct increment_id)) as AoV,
+sum(grand_total) as revenue
+from sales_order  
+where 
+created_at::date >= '2026-10-01' 
+and created_at::date < current_date
+and store_id = '1'
+and status in ('complete',
+'processing',
+'delivered',
+'Packed',
+'shipped',
+'in-transit',
+'dispatching_process',
+'partial_delivered',
+'out-for-delivery')
+group by to_char(created_at::date, 'yyyy-mm-dd') 
+order by to_char(created_at::date, 'yyyy-mm-dd') limit 10000;
