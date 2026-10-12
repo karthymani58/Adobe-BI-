@@ -1,0 +1,21 @@
+select
+to_char(created_at::date, 'yyyy/mm') as order_month,
+count(distinct increment_id) as orders,
+count(distinct customer_email) as customers,
+sum(grand_total) as revenue
+from sales_order  
+where 
+created_at::date >= '2025-01-01' 
+and created_at::date < current_date
+and store_id = '1'
+and status in ('complete',
+'processing',
+'delivered',
+'Packed',
+'shipped',
+'in-transit',
+'dispatching_process',
+'partial_delivered', 
+'out-for-delivery')
+group by to_char(created_at::date, 'yyyy/mm') 
+order by to_char(created_at::date, 'yyyy/mm') limit 1000;
