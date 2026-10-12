@@ -1,0 +1,108 @@
+with all_time_first_purchase as (
+select
+customer_email,
+min(created_at) as first_ever_order_date
+from sales_order
+where status in ('complete','processing','delivered','Packed','shipped',
+'in-transit','dispatching_process','partial_delivered','out-for-delivery')
+and store_id = 1
+group by customer_email),
+fy_first_order_month as (
+-- First month each customer ordered within each FY (New and Existing both)
+select
+customer_email,
+case
+when created_at >= '2024-04-01' and created_at < '2025-04-01' then date '2024-04-01'
+when created_at >= '2025-04-01' and created_at < '2026-04-01' then date '2025-04-01'
+when created_at >= '2026-04-01' and created_at < '2027-04-01' then date '2026-04-01'
+end as fy_start,
+date_trunc('month', min(created_at)) as first_month_in_fy
+from sales_order
+where status in ('complete','processing','delivered','Packed','shipped',
+'in-transit','dispatching_process','partial_delivered','out-for-delivery')
+and store_id = 1
+and created_at >= '2024-04-01'
+group by customer_email, fy_start),
+orders_with_fy as (
+select
+so.entity_id as order_id,
+so.customer_email,
+date_trunc('month', so.created_at) as order_month,
+so.grand_total,
+case
+when so.created_at >= '2024-04-01' and so.created_at < '2025-04-01' then date '2024-04-01'
+when so.created_at >= '2025-04-01' and so.created_at < '2026-04-01' then date '2025-04-01'
+when so.created_at >= '2026-04-01' and so.created_at < '2027-04-01' then date '2026-04-01'
+end as fy_start
+from sales_order so
+where so.status in ('complete','processing','delivered','Packed','shipped',
+'in-transit','dispatching_process','partial_delivered','out-for-delivery')
+and so.store_id = 1
+and so.created_at >= '2025-04-01'
+and so.created_at< current_date),
+orders_with_customer_type as (
+select
+o.order_id,
+o.customer_email,
+o.order_month,
+o.grand_total,
+o.fy_start,
+case
+when o.fy_start = date '2024-04-01' then 'FY 24-25'
+when o.fy_start = date '2025-04-01' then 'FY 25-26'
+when o.fy_start = date '2026-04-01' then 'FY 26-27'
+end as fiscal_year,
+case
+when atp.first_ever_order_date >= o.fy_start
+and atp.first_ever_order_date < o.fy_start + interval '1 year'
+then 'new'
+else 'existing'
+end as customer_type,
+-- Flag: is this the first month this customer ordered in this FY? (New and Existing both)
+case
+when o.order_month = ffo.first_month_in_fy then 1
+else 0
+end as is_first_month_in_fy
+from orders_with_fy o
+inner join all_time_first_purchase atp
+on o.customer_email = atp.customer_email
+inner join fy_first_order_month ffo
+on o.customer_email = ffo.customer_email
+and o.fy_start = ffo.fy_start
+where o.fy_start is not null
+),
+order_qty as (
+select
+order_id,
+sum(case when base_price > 0 then qty_ordered else 0 end) as total_qty
+from sales_order_item
+group by order_id
+),
+aggregated_orders as (
+select
+owct.order_month,
+owct.fiscal_year,
+owct.customer_type,
+count(distinct owct.customer_email) as customers,
+count(distinct case when owct.is_first_month_in_fy = 1 then owct.customer_email end) as unique_customers,
+count(distinct owct.order_id)   as orders,
+sum(owct.grand_total)   as revenue,
+sum(oq.total_qty)   as qty
+from orders_with_customer_type owct
+inner join order_qty oq
+on owct.order_id = oq.order_id
+where owct.customer_type in ('new', 'existing')
+group by owct.order_month, owct.fiscal_year, owct.customer_type
+having sum(oq.total_qty) != 0
+)
+select
+to_char(order_month, 'yyyy-mm') as year_month,
+fiscal_year,
+customer_type,
+customers,
+unique_customers,
+orders,
+revenue,
+qty
+from aggregated_orders
+order by year_month asc, fiscal_year, customer_type desc;
