@@ -1,0 +1,227 @@
+with fiscal_year_start as (
+select
+date '2026-04-01' as fy_start,
+current_date as fy_end),
+
+hero_product_skus as (
+select distinct sku, hero_product from (values
+('0111085', 'Adiyogi Rudraksha'),
+('0111086', 'Adiyogi Rudraksha'),
+('0111087', 'Adiyogi Rudraksha'),
+('0114875', 'Adiyogi Rudraksha'),
+('0114876', 'Adiyogi Rudraksha'),
+('0114877', 'Adiyogi Rudraksha'),
+('0119731', 'Adiyogi Rudraksha'),
+('0119732', 'Adiyogi Rudraksha'),
+('TC0007516900', 'Adiyogi Rudraksha'),
+('TC0007517000', 'Adiyogi Rudraksha'),
+('TC0007517100', 'Adiyogi Rudraksha'),
+('TC0007517200', 'Adiyogi Rudraksha'),
+('TC0007517300', 'Adiyogi Rudraksha'),
+('TC0007517400', 'Adiyogi Rudraksha'),
+('TC0007517500', 'Adiyogi Rudraksha'),
+('TC0007517600', 'Adiyogi Rudraksha'),
+('TC0007517700', 'Adiyogi Rudraksha'),
+('TC0007517800', 'Adiyogi Rudraksha'),
+('TC0007517900', 'Adiyogi Rudraksha'),
+('TC0007518000', 'Adiyogi Rudraksha'),
+('TC0007518100', 'Adiyogi Rudraksha'),
+('TC0007518200', 'Adiyogi Rudraksha'),
+('TC0007518300', 'Adiyogi Rudraksha'),
+('TC0007518400', 'Adiyogi Rudraksha'),
+('TC0007518500', 'Adiyogi Rudraksha'),
+('TC0007518600', 'Adiyogi Rudraksha'),
+('TC0007518700', 'Adiyogi Rudraksha'),
+('TC0007518800', 'Adiyogi Rudraksha'),
+('TC0007518900', 'Adiyogi Rudraksha'),
+('TC0007519000', 'Adiyogi Rudraksha'),
+('TC0007519100', 'Adiyogi Rudraksha'),
+('TC0007519200', 'Adiyogi Rudraksha'),
+('TC0007519300', 'Adiyogi Rudraksha'),
+('TC0007519400', 'Adiyogi Rudraksha'),
+('TC0007519600', 'Adiyogi Rudraksha'),
+('TC0007519700', 'Adiyogi Rudraksha'),
+('0106833', 'Devi Gudi'),
+('0111025', 'Devi Gudi'),
+('CO0001200000', 'Devi Gudi'),
+('TC0004600000', 'Devi Gudi'),
+('8905795000247', 'Ghee'),
+('8905795000254', 'Ghee'),
+('8905795034341', 'Ghee'),
+('NF0003106701', 'Ghee'),
+('NF0003106901', 'Ghee'),
+('NF0014303501', 'Ghee'),
+('NF0014303601', 'Ghee'),
+('NF0014303701', 'Ghee'),
+('NF0015805601', 'Ghee'),
+('8905795000407', 'Honey'),
+('8905795000490', 'Honey'),
+('8905795000506', 'Honey'),
+('8905795000537', 'Honey'),
+('8905795000544', 'Honey'),
+('8905795000551', 'Honey'),
+('8905795034334', 'Honey'),
+('8905795035096', 'Honey'),
+('8905795035102', 'Honey'),
+('NF0000406701', 'Honey'),
+('NF0000506901', 'Honey'),
+('NF0000706701', 'Honey'),
+('NF0000706901', 'Honey'),
+('NF0000806901', 'Honey'),
+('NF0002106901', 'Honey'),
+('NF0014706901', 'Honey'),
+('NF0015705601', 'Honey'),
+('NF0016106701', 'Honey'),
+('NF0016206901', 'Honey'),
+('NF0016506901', 'Honey'),
+('0105094', 'Mukha'),
+('TC0004200000', 'Mukha'),
+('8905795001077', 'Neem & Turmeric'),
+('8905795034396', 'Neem & Turmeric'),
+('HI0001000001', 'Neem & Turmeric'),
+('HI0006100001', 'Neem & Turmeric'),
+('0111001', 'Rudraksha'),
+('0111002', 'Rudraksha'),
+('0111003', 'Rudraksha'),
+('0111004', 'Rudraksha'),
+('0111005', 'Rudraksha'),
+('0111006', 'Rudraksha'),
+('0111007', 'Rudraksha'),
+('0111008', 'Rudraksha'),
+('0111009', 'Rudraksha'),
+('0111010', 'Rudraksha'),
+('CO0008300200', 'Rudraksha'),
+('CO0008300300', 'Rudraksha'),
+('CO0008300400', 'Rudraksha'),
+('CO0008300500', 'Rudraksha'),
+('CO0008400200', 'Rudraksha'),
+('CO0008400300', 'Rudraksha'),
+('CO0008400400', 'Rudraksha'),
+('CO0008400500', 'Rudraksha'),
+('RS0000300000', 'Rudraksha'),
+('RS0000400000', 'Rudraksha'),
+('RS0000500000', 'Rudraksha'),
+('RS0000607500', 'Rudraksha'),
+('RS0000607600', 'Rudraksha'),
+('RS0000607700', 'Rudraksha'),
+('RS0000607800', 'Rudraksha'),
+('RS0000607900', 'Rudraksha'),
+('RS0000608000', 'Rudraksha'),
+('RS0000608100', 'Rudraksha'),
+('8905795000353', 'Sanjeevini'),
+('8905795000360', 'Sanjeevini'),
+('8905795000377', 'Sanjeevini'),
+('NF0006206701', 'Sanjeevini'),
+('NF0006206901', 'Sanjeevini'),
+('NF0006207001', 'Sanjeevini'),
+('8905795000339', 'Sanjeevini Health Mix'),
+('NF0006106901', 'Sanjeevini Health Mix'),
+('0106737', 'Toothbrush'),
+('BC0000616900', 'Toothbrush'),
+('0106758', 'Toothpaste'),
+('0106759', 'Toothpaste'),
+('BC0000706001', 'Toothpaste'),
+('BC0000706501', 'Toothpaste')
+) as t(sku, hero_product)),
+
+first_purchase as (
+select customer_email, min(created_at) as first_ever_order_date
+from sales_order
+where status in ('complete', 'processing', 'delivered', 'Packed', 'shipped',
+'in-transit', 'dispatching_process', 'partial_delivered', 'out-for-delivery')
+and store_id = 1
+group by customer_email),
+
+first_hero_product_purchase as (
+select so.customer_email,
+hps.hero_product,
+min(so.created_at) as first_hero_purchase_date
+from sales_order so
+join sales_order_item soi on so.entity_id = soi.order_id
+join hero_product_skus hps
+on regexp_replace(regexp_replace(soi.sku, '-IN$', ''), 'old$', '') = hps.sku
+where so.status in ('complete', 'processing', 'delivered', 'Packed', 'shipped',
+'in-transit', 'dispatching_process', 'partial_delivered', 'out-for-delivery')
+and so.store_id = 1
+and soi.base_price > 0
+group by so.customer_email, hps.hero_product),
+
+first_hero_purchase_in_fy as (
+select so.customer_email,
+hps.hero_product,
+min(so.created_at) as first_hero_purchase_in_fy_date
+from sales_order so
+join sales_order_item soi on so.entity_id = soi.order_id
+join hero_product_skus hps
+on regexp_replace(regexp_replace(soi.sku, '-IN$', ''), 'old$', '') = hps.sku
+cross join fiscal_year_start fys
+where so.status in ('complete', 'processing', 'delivered', 'Packed', 'shipped',
+'in-transit', 'dispatching_process', 'partial_delivered', 'out-for-delivery')
+and so.store_id = 1
+and soi.base_price > 0
+and so.created_at >= fys.fy_start
+and so.created_at < fys.fy_end
+group by so.customer_email, hps.hero_product),
+
+-- NEW: full order subtotal across ALL items in the order, not just hero items
+order_full_subtotal as (
+select so.entity_id as order_id,
+sum(soi.qty_ordered * soi.base_price) as full_order_subtotal
+from sales_order so
+join sales_order_item soi on so.entity_id = soi.order_id
+where so.status in ('complete', 'processing', 'delivered', 'Packed', 'shipped',
+'in-transit', 'dispatching_process', 'partial_delivered', 'out-for-delivery')
+and so.store_id = 1
+and soi.base_price > 0
+group by so.entity_id),
+
+orders_with_customer_type as (
+select so.entity_id as order_id,
+so.customer_email,
+so.created_at::date as order_date,
+to_char(so.created_at, 'yyyy-mm') as order_month,
+so.grand_total,
+soi.sku,
+soi.name,
+soi.qty_ordered,
+soi.base_price,
+(soi.qty_ordered * soi.base_price) as product_revenue,
+hps.hero_product,
+case
+when fhp.first_hero_purchase_date >= fys.fy_start
+and fhp.first_hero_purchase_date < fys.fy_end then 'New'
+else 'Existing'
+end as hero_product_customer_type,
+fhpfy.first_hero_purchase_in_fy_date
+from sales_order so
+join sales_order_item soi on so.entity_id = soi.order_id
+join hero_product_skus hps
+on regexp_replace(regexp_replace(soi.sku, '-IN$', ''), 'old$', '') = hps.sku
+join first_purchase fp on so.customer_email = fp.customer_email
+join first_hero_product_purchase fhp
+on so.customer_email = fhp.customer_email
+and hps.hero_product = fhp.hero_product
+join first_hero_purchase_in_fy fhpfy
+on so.customer_email = fhpfy.customer_email
+and hps.hero_product = fhpfy.hero_product
+cross join fiscal_year_start fys
+where so.status in ('complete', 'processing', 'delivered', 'Packed', 'shipped',
+'in-transit', 'dispatching_process', 'partial_delivered', 'out-for-delivery')
+and so.store_id = 1
+and soi.base_price > 0
+and so.created_at >= fys.fy_start
+and so.created_at < fys.fy_end)
+
+select owct.order_month,
+owct.hero_product,
+owct.hero_product_customer_type,
+count(distinct owct.order_id) as orders,
+count(distinct owct.customer_email) as customers,
+count(distinct case when owct.order_date = owct.first_hero_purchase_in_fy_date::date
+then owct.customer_email end) as unique_customers,
+round(sum((owct.product_revenue / nullif(ofs.full_order_subtotal, 0)) * owct.grand_total), 0) as revenue
+from orders_with_customer_type owct
+join order_full_subtotal ofs on owct.order_id = ofs.order_id
+where ofs.full_order_subtotal > 0
+group by owct.order_month, owct.hero_product, owct.hero_product_customer_type
+order by owct.order_month asc, owct.hero_product, owct.hero_product_customer_type desc limit 10000;
