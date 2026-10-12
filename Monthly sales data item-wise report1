@@ -1,0 +1,56 @@
+with order_subtotals as (
+select
+soi.order_id,
+sum(soi.qty_ordered * soi.base_price) as order_subtotal
+from
+sales_order_item soi
+group by
+soi.order_id
+),
+product_sales as (
+select
+to_char(so.created_at, 'YYYY-MM') as year_month,
+soi.sku,
+soi.name,
+so.increment_id,
+soi.qty_ordered,
+soi.base_price,
+(soi.qty_ordered * soi.base_price) as product_revenue,
+os.order_subtotal,
+so.grand_total,
+ctm.l1 as l1_category
+from
+sales_order so
+join
+sales_order_item soi on so.entity_id = soi.order_id
+join
+order_subtotals os on so.entity_id = os.order_id
+left join
+category_table_mapping_india ctm on 
+case 
+when right(soi.sku, 3) = '-IN' then left(soi.sku, length(soi.sku) - 3)
+else soi.sku
+end = ctm.sku
+where
+so.status in ('complete','processing','delivered','Packed','shipped',
+'in-transit','dispatching_process','partial_delivered','out-for-delivery')
+and so.created_at >= '2026-09-01'
+and so.created_at < '2026-10-01'
+and so.store_id = '1'
+and soi.base_price > 0
+)
+select
+year_month,
+sku,
+name,
+l1_category,
+sum(qty_ordered) as qty,
+sum((product_revenue / nullif(order_subtotal, 0)) * grand_total) as adjusted_revenue
+from
+product_sales
+where
+order_subtotal > 0
+group by
+year_month, sku, name, l1_category
+order by
+year_month asc, adjusted_revenue desc;
