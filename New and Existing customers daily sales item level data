@@ -1,0 +1,63 @@
+with fiscal_year_start as (
+select date '2026-04-01' as fy_start,
+date '2027-04-01' as fy_end),
+first_purchase as (
+select 
+customer_email,
+min(created_at) as first_order_date
+from sales_order
+where status in ('complete','processing','delivered','Packed','shipped',
+'in-transit','dispatching_process','partial_delivered','out-for-delivery')
+and store_id = 1
+group by customer_email),
+orders_with_customer_type as (
+select 
+so.entity_id as order_id,
+so.customer_email,
+so.created_at::date as order_date,
+soi.sku,
+soi.name,
+soi.qty_ordered,
+soi.base_price,
+(soi.qty_ordered * soi.base_price) as product_revenue,
+so.grand_total,
+case 
+when fp.first_order_date >= fys.fy_start
+and fp.first_order_date <fys.fy_end then 'new'
+else 'existing'
+end as customer_type,
+ctm.l1 as l1_category
+from sales_order so
+join sales_order_item soi on so.entity_id = soi.order_id
+join first_purchase fp on so.customer_email = fp.customer_email
+cross join fiscal_year_start fys
+left join category_table_mapping_india ctm on 
+case 
+when right(soi.sku, 3) = '-IN' then left(soi.sku, length(soi.sku) - 3)
+else soi.sku
+end = ctm.sku
+where so.status in ('complete','processing','delivered','Packed','shipped',
+'in-transit','dispatching_process','partial_delivered','out-for-delivery')
+and so.store_id = 1
+and soi.base_price > 0
+and so.created_at >= '2026-10-01'
+and so.created_at < current_date),
+order_subtotals as (
+select 
+order_id,
+sum(product_revenue) as order_subtotal
+from orders_with_customer_type
+group by order_id)
+select 
+order_date,
+customer_type,
+sku,
+name,
+l1_category,
+sum(qty_ordered) as qty,
+sum((product_revenue / nullif(os.order_subtotal, 0)) * grand_total) as revenue
+from orders_with_customer_type owct
+join order_subtotals os on owct.order_id = os.order_id
+where os.order_subtotal > 0
+group by order_date, customer_type, sku, name, l1_category
+order by order_date asc, customer_type, revenue desc;
