@@ -1,0 +1,56 @@
+with all_time_first_purchase as (
+select
+customer_email,
+min(created_at) as first_ever_order_date
+from sales_order
+where status in (
+'complete', 'processing', 'delivered', 'Packed',
+'shipped', 'in-transit', 'dispatching_process',
+'partial_delivered', 'out-for-delivery'
+)
+and store_id = 1
+group by customer_email
+),
+fy_first_purchase as (
+select
+customer_email,
+case
+when created_at >= '2024-04-01' and created_at < '2025-04-01' then 'FY 24'
+when created_at >= '2025-04-01' and created_at < '2026-04-01' then 'FY 25'
+when created_at >= '2026-04-01' and created_at < '2027-04-01' then 'FY 26'
+end as fiscal_year,
+min(created_at) as first_order_in_fy
+from sales_order
+where status in (
+'complete', 'processing', 'delivered', 'Packed',
+'shipped', 'in-transit', 'dispatching_process',
+'partial_delivered', 'out-for-delivery'
+)
+and store_id = 1
+and created_at >= '2024-04-01'
+and created_at < date_trunc('month', current_date)
+group by customer_email, fiscal_year
+),
+classified as (
+select
+fy.customer_email,
+fy.fiscal_year,
+date_trunc('month', fy.first_order_in_fy) as entry_month,
+case
+when atp.first_ever_order_date >= date_trunc('month', fy.first_order_in_fy)
+ and atp.first_ever_order_date <  date_trunc('month', fy.first_order_in_fy) + interval '1 month'
+then 'new'
+else 'existing'
+end as customer_type
+from fy_first_purchase fy
+join all_time_first_purchase atp on fy.customer_email = atp.customer_email
+where fy.fiscal_year is not null
+)
+select
+to_char(entry_month, 'yyyy-mm') as year_month,
+fiscal_year,
+customer_type,
+count(distinct customer_email) as customers
+from classified
+group by entry_month, fiscal_year, customer_type
+order by entry_month asc, fiscal_year, customer_type desc limit 10000;
